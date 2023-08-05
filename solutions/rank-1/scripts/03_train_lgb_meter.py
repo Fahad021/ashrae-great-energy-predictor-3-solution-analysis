@@ -1,6 +1,6 @@
 import os
 import argparse
-import numpy as np 
+import numpy as np
 import lightgbm as lgb
 from datetime import datetime
 from ashrae.utils import (
@@ -33,24 +33,24 @@ parser.add_argument("--subsample", type=float, default=0.4,
 FEATURES = [
     # building meta features
     "square_feet", "year_built", "floor_count",
-    
+
     # cat cols
     "building_id", "site_id", "primary_use", 
     "hour", "weekday", "weekday_hour",
     "building_weekday_hour", "building_weekday",
     "building_hour", 
-    
+
     # raw weather features
     "air_temperature", "cloud_coverage", "dew_temperature",
     "precip_depth_1_hr", "sea_level_pressure", "wind_direction", "wind_speed",
-    
+
     # derivative weather features
     "air_temperature_mean_lag7", "air_temperature_std_lag7",
     "air_temperature_mean_lag73", "air_temperature_std_lag73",
-     
+
     # time features
     "weekday_x", "weekday_y", "is_holiday",
-    
+
     # target encoding features
     "gte_meter_building_id_hour", "gte_meter_building_id_weekday",
 ]
@@ -65,19 +65,19 @@ CAT_COLS = [
 DROP_COLS = [
     # time columns
     "year", "timestamp", "hour_x", "hour_y", 
-    
+
     # weather extremum
     "air_temperature_min_lag7", "air_temperature_max_lag7",
     "air_temperature_min_lag73", "air_temperature_max_lag73",    
-    
+
     # first-order gte
     "gte_hour", "gte_weekday", "gte_month", "gte_building_id",
     "gte_meter", "gte_meter_hour", "gte_primary_use", "gte_site_id", 
-    
+
     # second-order gte
     "gte_meter_weekday", "gte_meter_month", "gte_meter_building_id",
     "gte_meter_primary_use", "gte_meter_site_id",  
-    
+
     # month columns
     "month_x", "month_y", "building_month", #"month", 
     "gte_meter_building_id_month"
@@ -89,9 +89,9 @@ if __name__ == "__main__":
     python scripts/03_train_lgb_meter.py --normalize_target
     python scripts/03_train_lgb_meter.py 
     """
-    
+
     args = parser.parse_args()
-    
+
     with timer("Loading data"):
         train = load_data("train_clean")
         train.drop(DROP_COLS, axis=1, inplace=True)
@@ -109,10 +109,10 @@ if __name__ == "__main__":
             train["target"] = np.log1p(train["meter_reading"])
 
     # get base file name
-    model_name = f"lgb-split_meter"
+    model_name = "lgb-split_meter"
     make_dir(f"{MODEL_PATH}/{model_name}")
-    
-    with timer("Training"):        
+
+    with timer("Training"):    
         # for seed in range(3): #@Matt, difference seed adds very littler diversity
         for seed in [0]:
             for n_months in [1,2,3,4,5,6]:
@@ -126,11 +126,9 @@ if __name__ == "__main__":
                         # create sub model path
                         if args.normalize_target:
                             sub_model_path = f"{MODEL_PATH}/{model_name}/target_normalization/meter_{m}"
-                            make_dir(sub_model_path)
                         else:
                             sub_model_path = f"{MODEL_PATH}/{model_name}/no_normalization/meter_{m}"
-                            make_dir(sub_model_path)
-
+                        make_dir(sub_model_path)
                         # create model version
                         model_version = "_".join([
                             str(args.n_leaves), str(args.lr),

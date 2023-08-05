@@ -65,7 +65,7 @@ def make_is_bad_zero(Xy_subset, min_interval=48, summer_start=3000, summer_end=7
         dec_id = time_ids.get(8283, False)
         if (jan_id and dec_id and jan_id == time_ids.get(500, False) and
                 dec_id == time_ids.get(8783, False)):
-            is_bad = is_bad & (~(ids.isin(set([jan_id, dec_id]))))
+            is_bad = is_bad & ~ids.isin({jan_id, dec_id})
     else:
         raise Exception(f"Unexpected meter type: {meter}")
 
@@ -98,8 +98,7 @@ def find_bad_rows(X, y):
 
 def input_file(file):
     path = f"../input/{file}"
-    if not os.path.exists(path): return path + ".gz"
-    return path
+    return path + ".gz" if not os.path.exists(path) else path
 
 def compress_dataframe(df):
     result = df.copy()
@@ -133,7 +132,7 @@ def read_weather_train(fix_timestamps=True, interpolate_na=True, add_na_indicato
     df = pd.read_csv(input_file("weather_train.csv"), parse_dates=["timestamp"])
     df.timestamp = (df.timestamp - pd.to_datetime("2016-01-01")).dt.total_seconds() // 3600
     if fix_timestamps:
-        GMT_offset_map = {site: offset for site, offset in enumerate(site_GMT_offsets)}
+        GMT_offset_map = dict(enumerate(site_GMT_offsets))
         df.timestamp = df.timestamp + df.site_id.map(GMT_offset_map)
     if interpolate_na:
         site_dfs = []
@@ -154,7 +153,7 @@ def read_weather_train(fix_timestamps=True, interpolate_na=True, add_na_indicato
 
     df = compress_dataframe(df)
     add_sg(df)
-    
+
     return compress_dataframe(df).set_index(["site_id", "timestamp"])
 
 
@@ -242,7 +241,7 @@ def read_weather_test(fix_timestamps=True, interpolate_na=True, add_na_indicator
     df = pd.read_csv(input_file("weather_test.csv"), parse_dates=["timestamp"])
     df.timestamp = (df.timestamp - pd.to_datetime("2016-01-01")).dt.total_seconds() // 3600
     if fix_timestamps:
-        GMT_offset_map = {site: offset for site, offset in enumerate(site_GMT_offsets)}
+        GMT_offset_map = dict(enumerate(site_GMT_offsets))
         df.timestamp = df.timestamp + df.site_id.map(GMT_offset_map)
     if interpolate_na:
         site_dfs = []
@@ -266,8 +265,15 @@ def read_weather_test(fix_timestamps=True, interpolate_na=True, add_na_indicator
 
 
 def combined_test_data(fix_timestamps=True, interpolate_na=True, add_na_indicators=True):
-    X = compress_dataframe(read_test().join(read_building_metadata(), on="building_id").join(
-        read_weather_test(fix_timestamps, interpolate_na, add_na_indicators),
-        on=["site_id", "timestamp"]).fillna(-1))
-    return X
+    return compress_dataframe(
+        read_test()
+        .join(read_building_metadata(), on="building_id")
+        .join(
+            read_weather_test(
+                fix_timestamps, interpolate_na, add_na_indicators
+            ),
+            on=["site_id", "timestamp"],
+        )
+        .fillna(-1)
+    )
 

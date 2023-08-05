@@ -77,9 +77,7 @@ def create_X(test_df, building_meta_df, weather_test_df, target_meter):
     target_test_df = test_df[test_df['meter'] == target_meter]
     target_test_df = target_test_df.merge(building_meta_df, on='building_id', how='left')
     target_test_df = target_test_df.merge(weather_test_df, on=['site_id', 'timestamp'], how='left')
-    #X_test = target_test_df[feature_cols + category_cols + ['month']]
-    X_test = target_test_df[feature_cols + category_cols ]
-    return X_test
+    return target_test_df[feature_cols + category_cols ]
 
 
 def pred(X_test, models, batch_size=1000000):

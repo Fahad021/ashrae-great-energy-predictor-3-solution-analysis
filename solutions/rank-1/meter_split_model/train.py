@@ -134,7 +134,7 @@ def train(debug=False):
         df["weekend"] = df["timestamp"].dt.weekday
         df["month"] = df["timestamp"].dt.month
         df["dayofweek"] = df["timestamp"].dt.dayofweek
-        
+
     with timer("Feature engineering"):
 
         preprocess(train_df)
@@ -250,10 +250,7 @@ def train(debug=False):
     #               'reg_lambda': 0.3
                   }
         device = devices[0]
-        if device == -1:
-            # use cpu
-            pass
-        else:
+        if device != -1:
             # use gpu
             print(f'using gpu device_id {device}...')
             params.update({'device': 'gpu', 'gpu_device_id': device})
@@ -284,6 +281,7 @@ def train(debug=False):
         return model, y_pred_valid, log
 
 
+
     from sklearn.model_selection import GroupKFold
 
     seed = 666
@@ -306,9 +304,9 @@ def train(debug=False):
 
     oof_total = 0
     target_meter = 0    
-    
-    with timer("Training meter #" + str(target_meter)):
-    
+
+    with timer(f"Training meter #{target_meter}"):
+
         X_train, y_train = create_X_y(train_df, target_meter=target_meter)
         y_valid_pred_total = np.zeros(X_train.shape[0])
         gc.collect()
@@ -328,7 +326,7 @@ def train(debug=False):
 
             mindex = train_df[train_df.meter==target_meter].iloc[valid_idx,:].month.unique()
             print (mindex)
-            
+
             msg = f'Training - train# {len(train_idx)} val# {len(train_idx)}'
             with timer(msg):
         #     model, y_pred_valid, log = fit_cb(train_data, valid_data, cat_features=cat_features, devices=[0,])
@@ -363,7 +361,7 @@ def train(debug=False):
     # ## model for meter 1
 
     target_meter = 1
-    with timer("Training meter #" + str(target_meter)):
+    with timer(f"Training meter #{target_meter}"):
         X_train, y_train = create_X_y(train_df, target_meter=target_meter)
         y_valid_pred_total = np.zeros(X_train.shape[0])
         gc.collect()
@@ -407,7 +405,7 @@ def train(debug=False):
     # ## model for meter 2
 
     target_meter = 2
-    with timer("Training meter #" + str(target_meter)):
+    with timer(f"Training meter #{target_meter}"):
         X_train, y_train = create_X_y(train_df, target_meter=target_meter)
         y_valid_pred_total = np.zeros(X_train.shape[0])
 
@@ -452,7 +450,7 @@ def train(debug=False):
     # ## model for meter 3
 
     target_meter = 3
-    with timer("Training meter #" + str(target_meter)):
+    with timer(f"Training meter #{target_meter}"):
         X_train, y_train = create_X_y(train_df, target_meter=target_meter)
         y_valid_pred_total = np.zeros(X_train.shape[0])
 
@@ -486,7 +484,7 @@ def train(debug=False):
 
     oof_total += oof3 * len(y_train)
 
-    oof_total = oof_total / len(train_df)
+    oof_total /= len(train_df)
 
     sns.distplot(y_train)
     sns.distplot(y_valid_pred_total)

@@ -147,9 +147,9 @@ if __name__ == "__main__":
     python scripts/03_train_mlp_meter.py --normalize_target
     python scripts/03_train_mlp_meter.py
     """
-    
+
     args = parser.parse_args()
-    
+
     with timer("Loading data"):
         train = load_data("train_nn_meter")
         train = train.loc[train.is_bad_meter_reading==0].reset_index(drop=True)
@@ -159,12 +159,12 @@ if __name__ == "__main__":
             train["target"] = np.log1p(train["target"]/square_feet)
         else:
             train["target"] = np.log1p(train["target"])
-        
+
     with timer("Preprocesing"):
         meter_cat_counts = train.groupby(["meter"])[CAT_COLS].agg(lambda x: len(np.unique(x)))
 
     # get base file name
-    model_name = f"mlp-split_meter"
+    model_name = "mlp-split_meter"
     make_dir(f"{MODEL_PATH}/{model_name}")
 
     with timer("Training"):
@@ -178,11 +178,9 @@ if __name__ == "__main__":
                         # create sub model path
                         if args.normalize_target:
                             sub_model_path = f"{MODEL_PATH}/{model_name}/target_normalization/meter_{m}"
-                            make_dir(sub_model_path)
                         else:
                             sub_model_path = f"{MODEL_PATH}/{model_name}/no_normalization/meter_{m}"
-                            make_dir(sub_model_path)
-
+                        make_dir(sub_model_path)
                         # create model version
                         model_version = "_".join([
                             str(seed), str(n_months), str(fold_), 

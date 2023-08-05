@@ -1,7 +1,7 @@
 import os
 import glob
-import numpy as np 
-import pandas as pd 
+import numpy as np
+import pandas as pd
 from functools import partial
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         preds_matrix = [np.load(x) for x in MODEL_LIST if ".npy" in x]
         replace_inds = (test.site_id == 0) & (test.meter == 0)
 
-        if len([x for x in MODEL_LIST if ".csv" in x]) > 0:
+        if [x for x in MODEL_LIST if ".csv" in x]:
             preds_matrix += [pd.read_csv(x).meter_reading.values for x in MODEL_LIST if ".csv" in x]
 
         preds_matrix = np.vstack(preds_matrix).T
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     with timer("initialize data"):    
         X_train = preds_matrix[~np.isnan(target)]
         y_train = target[~np.isnan(target)]
-        
+
     # correct site 0
     with timer("correct site 0"):        
         correction_indices = ((test.site_id==0) & (test.meter==0))[~np.isnan(target)]
@@ -63,10 +63,10 @@ if __name__ == "__main__":
 
     #  blend predictions
     with timer("blend predictions"):
-        
+
         best_score = np.inf
         for it in range(10):
-            
+
             # optimize weighs
             gmb = GeneralizedMeanBlender(p_range=(0,1))
             gmb.fit(np.log1p(X_train),
@@ -76,7 +76,7 @@ if __name__ == "__main__":
             # evaluate blend
             preds = np.expm1(gmb.transform(np.log1p(X_train)))
             score = mean_squared_error(np.log1p(y_train), np.log1p(preds))
-            
+
             # check for improvement
             if score < best_score:
                 print(f"iteration {it}: score improved from {best_score:0.7f} to {score:0.7f}")

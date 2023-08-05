@@ -55,18 +55,18 @@ X_test = X_test.drop('timestamp', axis=1)
 # print(X_train.shape)
 
 def meter_predict(meter, model, X_test, best_iteration, iteration_mul=1.5):
-    X_test_m = X_test.query('meter == {}'.format(meter)).drop('meter', axis=1)
+    X_test_m = X_test.query(f'meter == {meter}').drop('meter', axis=1)
     g = X_test_m.groupby('building_id')
-    
+
     y_pred = []
     for building_id in tqdm(sorted(X_test_m['building_id'].unique())):
         X_building = g.get_group(building_id)
         y_pred.append(pd.Series(model.predict(X_building, n_jobs=4,num_iteration=min(models_all[meter].n_estimators, int(best_iteration[meter][building_id]*iteration_mul))), index=X_building.index))
-        
+
     return pd.concat(y_pred).sort_index()
 
 # load model
-load_name = '{}/../model/model_use_{}_seed{}_leave{}_lr{}_tree{}.pkl'.format(code_path, args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), args.n_estimators)
+load_name = f"{code_path}/../model/model_use_{args.train_file.replace('.ftr', '')}_seed{args.seed}_leave{args.num_leaves}_lr{str(args.learning_rate).replace('.', '')}_tree{args.n_estimators}.pkl"
 with open(load_name, 'rb') as f:
     models = pickle.load(f)
 
@@ -74,16 +74,16 @@ with open(load_name, 'rb') as f:
 #     pickle.dump(models, f)
 
 # 各building, meter毎の最良のiteration数
-best_iteration = dict()
+best_iteration = {}
 for meter in [0,1,2,3]:
-    best_iteration[meter] = dict()
+    best_iteration[meter] = {}
 #     for i in range(1448):
 #         best_iteration[meter][i] = 200
-    for i in tqdm(sorted(X_valid.query('meter == {}'.format(meter))['building_id'].unique())):
+    for i in tqdm(sorted(X_valid.query(f'meter == {meter}')['building_id'].unique())):
         best_iteration[meter][i] = max(20, np.argmin(np.array(models[meter].evals_result_[i]['rmse'])) + 1)
 #         best_iteration[meter][i] = np.argmin(np.array(models[meter].evals_result_[i]['rmse'])) + 1
 
-del_list = [list(), list(), list(), list()]
+del_list = [[], [], [], []]
 for meter in [0,1,2,3]:
     for buildingID, itr in best_iteration[meter].items():
         if itr<=20:
@@ -99,15 +99,20 @@ for meter in [0,1,2,3]:
             best_iteration[meter][i] = 200
 
 #load model
-load_name = '{}/../model/model_all_use_{}_seed{}_leave{}_lr{}_tree{}.pkl'.format(code_path, args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), args.n_estimators)
+load_name = f"{code_path}/../model/model_all_use_{args.train_file.replace('.ftr', '')}_seed{args.seed}_leave{args.num_leaves}_lr{str(args.learning_rate).replace('.', '')}_tree{args.n_estimators}.pkl"
 with open(load_name, 'rb') as f:
     models_all = pickle.load(f)
 
-# meter type毎のtestの予測    
-preds = list()
-for i in tqdm([3,2,1,0]):
-    preds.append(meter_predict(i, models_all[i], X_test, best_iteration, iteration_mul=args.iteration_mul))
-
+preds = [
+    meter_predict(
+        i,
+        models_all[i],
+        X_test,
+        best_iteration,
+        iteration_mul=args.iteration_mul,
+    )
+    for i in tqdm([3, 2, 1, 0])
+]
 y_preds = pd.concat(preds).sort_index()
 
 # lgb.plot_importance(models_all[0], importance_type='gain', figsize=(10,20))
@@ -117,7 +122,7 @@ submission = pd.read_csv(f'{code_path}/../input/sample_submission.csv')
 submission['meter_reading'] = (np.expm1(y_preds))
 submission.loc[submission['meter_reading']<0, 'meter_reading'] = 0
 
-save_name = '{}/../output/use_{}_seed{}_leave{}_lr{}_tree{}_mul{}.csv'.format(code_path, args.train_file.replace('.ftr', ''), args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), args.n_estimators, str(args.iteration_mul).replace('.', ''))
+save_name = f"{code_path}/../output/use_{args.train_file.replace('.ftr', '')}_seed{args.seed}_leave{args.num_leaves}_lr{str(args.learning_rate).replace('.', '')}_tree{args.n_estimators}_mul{str(args.iteration_mul).replace('.', '')}.csv"
 submission.to_csv(save_name, index=False)
 
 submission.head()

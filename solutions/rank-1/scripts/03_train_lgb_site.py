@@ -1,6 +1,6 @@
 import os
 import argparse
-import numpy as np 
+import numpy as np
 import lightgbm as lgb
 from datetime import datetime
 from ashrae.utils import (
@@ -32,24 +32,24 @@ parser.add_argument("--subsample", type=float, default=0.4,
 FEATURES = [
     # building meta features
     "square_feet", "year_built", "floor_count",
-    
+
     # cat cols
     "building_id", "meter", "primary_use", 
     "hour", "weekday", "weekday_hour",
     "building_weekday_hour", "building_weekday",
     "building_hour", 
-    
+
     # raw weather features
     "air_temperature", "cloud_coverage", "dew_temperature",
     "precip_depth_1_hr", "sea_level_pressure", "wind_direction", "wind_speed",
-    
+
     # derivative weather features
     "air_temperature_mean_lag7", "air_temperature_std_lag7",
     "air_temperature_mean_lag73", "air_temperature_std_lag73",
-     
+
     # time features
     "weekday_x", "weekday_y", "is_holiday",
-    
+
     # target encoding features
     "gte_meter_building_id_hour", "gte_meter_building_id_weekday",
 ]
@@ -64,19 +64,19 @@ CAT_COLS = [
 DROP_COLS = [
     # time columns
     "year", "timestamp", "hour_x", "hour_y", 
-    
+
     # weather extremum
     "air_temperature_min_lag7", "air_temperature_max_lag7",
     "air_temperature_min_lag73", "air_temperature_max_lag73",    
-    
+
     # first-order gte
     "gte_hour", "gte_weekday", "gte_month", "gte_building_id",
     "gte_meter", "gte_meter_hour", "gte_primary_use", "gte_site_id", 
-    
+
     # second-order gte
     "gte_meter_weekday", "gte_meter_month", "gte_meter_building_id",
     "gte_meter_primary_use", "gte_meter_site_id",  
-    
+
     # month columns
     "month_x", "month_y", "building_month", #"month", 
     "gte_meter_building_id_month"
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     """
 
     args = parser.parse_args()
-    
+
     with timer("Loading data"):
         train = load_data("train_clean")
         train.drop(DROP_COLS, axis=1, inplace=True)
@@ -107,28 +107,26 @@ if __name__ == "__main__":
             train["target"] = np.log1p(train["meter_reading"])
 
     # get base file name
-    model_name = f"lgb-split_site"
+    model_name = "lgb-split_site"
     make_dir(f"{MODEL_PATH}/{model_name}")
 
-    with timer("Training"):        
+    with timer("Training"):    
         # for seed in range(3): #@Matt, difference seed adds very littler diversity
         for seed in [0]:
             for n_months in [1,2,3,4,5,6]:
             #for n_months in [4,5,6]: #@Matt, n_months=3 brings optimal tradeoff between single model performance and diversity for the ensemble
                 # validation_months_list = get_validation_months(n_months) #@Matt, fixed the bug -> hard-coded n_months
                 validation_months_list = get_validation_months(n_months)
-                
+
                 for fold_, validation_months in enumerate(validation_months_list):    
                     for s in range(16):    
 
                         # create sub model path
                         if args.normalize_target:
                             sub_model_path = f"{MODEL_PATH}/{model_name}/target_normalization/site_{s}"
-                            make_dir(sub_model_path)
                         else:
                             sub_model_path = f"{MODEL_PATH}/{model_name}/no_normalization/site_{s}"
-                            make_dir(sub_model_path)
-
+                        make_dir(sub_model_path)
                         # create model version
                         model_version = "_".join([
                             str(args.n_leaves), str(args.lr),
@@ -152,7 +150,7 @@ if __name__ == "__main__":
                         trn_idx = np.intersect1d(trn_idx, np.where(train.site_id == s)[0])
                         val_idx = np.intersect1d(val_idx, np.where(train.site_id == s)[0])
                         #print(f"split site: train size {len(trn_idx)} val size {len(val_idx)}")
-                                                
+
                         # skip if empty
                         if len(val_idx) == 0:
                             continue                        

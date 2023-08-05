@@ -41,12 +41,12 @@ def train(debug=True):
         model = CatSplitRegressor(
             LGBMWrapper(**params, random_state=0, n_jobs=-1, categorical_feature=categorical_columns), "meter")
         model.fit(X, y)
-        
+
     del X, y
 
     if not debug:
         import pickle
-        with open(MODEL_PATH + 'cleanup_model.pickle', mode='wb') as f:
+        with open(f'{MODEL_PATH}cleanup_model.pickle', mode='wb') as f:
             pickle.dump([model], f)
         del model
 

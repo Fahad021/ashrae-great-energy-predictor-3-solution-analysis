@@ -23,14 +23,14 @@ drops= ["timestamp", 'wind_direction', 'wind_speed']
 
 def predict(debug=True):
     
-    with open(MODEL_PATH + 'cleanup_model.pickle', mode='rb') as f:
+    with open(f'{MODEL_PATH}cleanup_model.pickle', mode='rb') as f:
         [model] = pickle.load(f)
-        
+
     with timer("Preprocesing"):
         X = combined_test_data()
         X = compress_dataframe(add_time_features(X))
         X = X.drop(columns=drops)  # Raw timestamp doesn't help when prediction
-        
+
     with timer("Training"):
         predictions = pd.DataFrame({
             "row_id": X.index,
@@ -43,20 +43,26 @@ def predict(debug=True):
     # Finally, write the predictions out for submission. After that, it's Miller Time (tm).
 
     if not debug:
-        predictions.to_csv(OUTPUT_DIR + "submission_cleanup.csv", index=False, float_format="%.4f")
-        
-        
+        predictions.to_csv(
+            f"{OUTPUT_DIR}submission_cleanup.csv",
+            index=False,
+            float_format="%.4f",
+        )
+                
+
     with timer("Post-procesing"):
         # # LB Score
-        leak_df = pd.read_feather(INPUT_DIR + 'leak.feather')
+        leak_df = pd.read_feather(f'{INPUT_DIR}leak.feather')
 
         leak_df.fillna(0, inplace=True)
         leak_df = leak_df[(leak_df.timestamp.dt.year > 2016) & (leak_df.timestamp.dt.year < 2019)]
         leak_df.loc[leak_df.meter_reading < 0, 'meter_reading'] = 0 # remove large negative values
         leak_df = leak_df[leak_df.building_id!=245]
 
-        test_df = pd.read_feather(PROCESSED_PATH + 'test.feather')
-        building_meta_df = pd.read_feather(PROCESSED_PATH + 'building_metadata.feather')
+        test_df = pd.read_feather(f'{PROCESSED_PATH}test.feather')
+        building_meta_df = pd.read_feather(
+            f'{PROCESSED_PATH}building_metadata.feather'
+        )
         test_df['timestamp'] = pd.to_datetime(test_df.timestamp)
 
         test_df['pred'] = predictions.meter_reading
@@ -74,8 +80,12 @@ def predict(debug=True):
         leak_df = leak_df[['meter_reading', 'row_id']].set_index('row_id').dropna()
         predictions.loc[leak_df.index, 'meter_reading'] = leak_df['meter_reading']
         if not debug:
-             predictions.to_csv(OUTPUT_DIR + 'submission_replaced_cleanup.csv', index=False, float_format='%.4f')
-                
+            predictions.to_csv(
+                f'{OUTPUT_DIR}submission_replaced_cleanup.csv',
+                index=False,
+                float_format='%.4f',
+            )
+
         print('total score=', leak_score)
 
 if __name__ == '__main__':

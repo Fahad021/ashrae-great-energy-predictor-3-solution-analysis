@@ -69,7 +69,7 @@ if __name__ == "__main__":
     python scripts/04_predict_mlp_meter.py --normalize_target
     python scripts/04_predict_mlp_meter.py
     """
-    
+
     args = parser.parse_args()
 
     with timer("Loading data"):
@@ -80,13 +80,13 @@ if __name__ == "__main__":
             test = load_data("test_nn_meter")
         test["target"] = -1
 
-    with timer("Predicting"):            
+    with timer("Predicting"):        
         test_preds = np.zeros(len(test))
 
-        for m in range(4):        
-            print(m)
             # get base file name
-            model_name = f"mlp-split_meter"
+        model_name = "mlp-split_meter"
+        for m in range(4):
+            print(m)
             make_dir(f"{MODEL_PATH}/{model_name}")
 
             # create sub model path
@@ -101,17 +101,17 @@ if __name__ == "__main__":
 
             # load models
             model_list = glob.glob(f"{sub_model_path}/*")
-            
+
             # predict 
             msg = f'Predicting for meter {m} - models# {len(model_list)}, test# {len(X)}'
             with timer(msg):
-                # predict    
-                assert len(model_list) != 0, "No models to load"
+                # predict
+                assert model_list, "No models to load"
 
                 if len(model_list) == 1:
                     preds = predict_mlp(X, model_list[0])
                 else:
-                    preds = np.mean([predict_mlp(X, model_name) for model_name in model_list], 0)                           
+                    preds = np.mean([predict_mlp(X, model_name) for model_name in model_list], 0)
                 test_preds[test.meter == m] = preds[:,0]
 
         # invert target transformation    

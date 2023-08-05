@@ -1,7 +1,7 @@
 import os
 import glob
-import numpy as np 
-import pandas as pd 
+import numpy as np
+import pandas as pd
 from functools import partial
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         preds_matrix = [np.load(x) for x in MODEL_LIST if ".npy" in x]
         replace_inds = (test.site_id == 0) & (test.meter == 0)
 
-        if len([x for x in MODEL_LIST if ".csv" in x]) > 0:
+        if [x for x in MODEL_LIST if ".csv" in x]:
             preds_matrix += [pd.read_csv(x).meter_reading.values for x in MODEL_LIST if ".csv" in x]
 
         preds_matrix = np.vstack(preds_matrix).T

@@ -29,11 +29,11 @@ class GaussianTargetEncoder():
         self.prior_cols = prior_cols
 
     def _get_prior(self, df):
-        if self.prior_cols is None:
-            prior = np.full(len(df), df[self.target_col].mean())
-        else:
-            prior = df[self.prior_cols].mean(1)
-        return prior
+        return (
+            np.full(len(df), df[self.target_col].mean())
+            if self.prior_cols is None
+            else df[self.prior_cols].mean(1)
+        )
                     
     def fit(self, df):
         self.stats = df.assign(mu_prior=self._get_prior(df), y=df[self.target_col])

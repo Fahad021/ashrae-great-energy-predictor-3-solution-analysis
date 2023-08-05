@@ -66,10 +66,10 @@ test2018 = test.query('20180101<=timestamp')
 def preproceeding(submission, N):
     submission.loc[:,'pred1':'leaked_meter_reading'] = np.log1p(submission.loc[:,'pred1':'leaked_meter_reading'])
     g = submission.groupby('meter')
-    sub_sub = [dict(), dict(), dict(), dict()]
-    leak_sub = [dict(), dict(), dict(), dict()]
+    sub_sub = [{}, {}, {}, {}]
+    leak_sub = [{}, {}, {}, {}]
     leak_leak = [0,0,0,0]
-    
+
     for meter in [3,2,1,0]:
         for i in tqdm(range(1,N+1)):
             leak_sub[meter][i] = sum(-2 * g.get_group(meter)['leaked_meter_reading'] * g.get_group(meter)[f'pred{i}'])
@@ -78,9 +78,9 @@ def preproceeding(submission, N):
                     sub_sub[meter][(i,j)] = sub_sub[meter][(j,i)]
                 else:
                     sub_sub[meter][(i,j)] = sum(g.get_group(meter)[f'pred{i}'] * g.get_group(meter)[f'pred{j}'])
-        
+
         leak_leak[meter] = (sum(g.get_group(meter)['leaked_meter_reading'] ** 2))
-    
+
     return sub_sub, leak_sub, leak_leak
 
 def optimization(meter, sub_sub, leak_sub, leak_leak, length, W):
@@ -108,12 +108,12 @@ def make_ensemble_weight(focus_df, N):
 
 
     np.random.seed(1)
-    score = [list(), list(), list(), list()]
-    weight = [list(), list(), list(), list()]
+    score = [[], [], [], []]
+    weight = [[], [], [], []]
 
     for meter in [0,1,2,3]:
         f = partial(optimization, meter, sub_sub, leak_sub, leak_leak, len(focus_df.query(f'meter=={meter}')))
-        for i in tqdm(range(1000000)):
+        for _ in tqdm(range(1000000)):
             W = np.random.rand(N)
 
             to_zero = np.arange(N)
@@ -127,7 +127,7 @@ def make_ensemble_weight(focus_df, N):
 
         score[meter] = np.array(score[meter])
         weight[meter] = np.array(weight[meter])
-    
+
     return weight, score
 
 weight2017, score2017 = make_ensemble_weight(test2017, N)
@@ -155,10 +155,14 @@ for meter in [0,1,2,3]:
 #     print()
 
 def new_pred(test, weight, score, N):
-    pred_new = list()
+    pred_new = []
     for meter in [0,1,2,3]:
         test_m = test.query(f'meter=={meter}')
-        ensemble_m = sum([np.log1p(test_m[f'pred{i+1}']) * weight[meter][score[meter].argmin()][i] for i in range(N)])
+        ensemble_m = sum(
+            np.log1p(test_m[f'pred{i+1}'])
+            * weight[meter][score[meter].argmin()][i]
+            for i in range(N)
+        )
         pred_new.append(ensemble_m)
 
     pred_new = pd.concat(pred_new).sort_index()

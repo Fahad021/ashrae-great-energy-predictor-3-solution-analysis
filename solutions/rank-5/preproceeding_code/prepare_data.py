@@ -33,7 +33,7 @@ weather_test = pd.read_csv(f'{code_path}/../input/{args.weather_test_file}', par
 
 # drop bad rows
 
-del_list = list()
+del_list = []
 
 for building_id in range(1449):
     train_gb = train[train['building_id'] == building_id].groupby("meter")
@@ -44,12 +44,12 @@ for building_id in range(1449):
 #         splited_value = np.split(data, np.where((data[1:] != data[:-1]) | (data[1:] == min(data)))[0] + 1)
 #         splited_date = np.split(tmp_df.timestamp.values, np.where((data[1:] != data[:-1]) | (data[1:] == min(data)))[0] + 1)
         splited_idx = np.split(tmp_df.index.values, np.where((data[1:] != data[:-1]) | (data[1:] == min(data)))[0] + 1)
-        for i, x in enumerate(splited_idx):
+        for x in splited_idx:
             if len(x) > 24:
 #                 print("length: {},\t{}-{},\tvalue: {}".format(len(x), x[0], x[-1], splited_value[i][0]))
                 del_list.extend(x[1:])
-                
-                
+
+
 #         print()
 
 del tmp_df, train_gb
@@ -245,8 +245,10 @@ def make_fraction(col1, col2):
     col2_frac_sum = col2_frac.groupby(col1).sum().rename(columns = {'meter_reading':'sum'})
     col2_frac = col2_frac.merge(col2_frac_sum, on = col1, how='left')
     col2_frac.index = col2_frac_idx
-    col2_frac['frac_{}_{}'.format(col1, col2)] = col2_frac['meter_reading'] / col2_frac['sum']
-    col2_frac = col2_frac[['frac_{}_{}'.format(col1, col2)]]
+    col2_frac[f'frac_{col1}_{col2}'] = (
+        col2_frac['meter_reading'] / col2_frac['sum']
+    )
+    col2_frac = col2_frac[[f'frac_{col1}_{col2}']]
     return col2_frac
 
 

@@ -43,7 +43,7 @@ def process_timestamp(df):
 def process_weather(df, dataset, fix_timestamps=True, interpolate_na=True, add_na_indicators=True):
     if fix_timestamps:
         site_GMT_offsets = [-5, 0, -7, -5, -8, 0, -5, -5, -5, -6, -7, -5, 0, -6, -5, -5]
-        GMT_offset_map = {site: offset for site, offset in enumerate(site_GMT_offsets)}
+        GMT_offset_map = dict(enumerate(site_GMT_offsets))
         df.timestamp = df.timestamp + df.site_id.map(GMT_offset_map)
 
     if interpolate_na:

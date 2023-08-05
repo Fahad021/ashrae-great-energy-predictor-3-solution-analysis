@@ -13,7 +13,7 @@ from scipy import stats
 import time
 from tqdm import tqdm
 
-import os 
+import os
 code_path = os.path.dirname(os.path.abspath(__file__))
 
 metadata = pd.read_csv(f'{code_path}/../input/building_metadata.csv')
@@ -40,7 +40,7 @@ leaked_df = leaked_df.rename(columns={'leaked_meter_reading': 'meter_reading'})
 # 連続で同じ値を取るやつを除去
 # ただし、同じ値を取るやつが最小値だった場合は除去しない(電気データの場合、最小値=休みの日とかの可能性があるため)
 
-del_list = list()
+del_list = []
 
 for building_id in range(1449):
     leaked_df_gb = leaked_df[leaked_df['building_id'] == building_id].groupby("meter")
@@ -51,12 +51,12 @@ for building_id in range(1449):
 #         splited_value = np.split(data, np.where((data[1:] != data[:-1]) | (data[1:] == min(data)))[0] + 1)
 #         splited_date = np.split(tmp_df.timestamp.values, np.where((data[1:] != data[:-1]) | (data[1:] == min(data)))[0] + 1)
         splited_idx = np.split(tmp_df.index.values, np.where((data[1:] != data[:-1]) | (data[1:] == min(data)))[0] + 1)
-        for i, x in enumerate(splited_idx):
+        for x in splited_idx:
             if len(x) > 24:
 #                 print("length: {},\t{}-{},\tvalue: {}".format(len(x), x[0], x[-1], splited_value[i][0]))
                 del_list.extend(x[1:])
-                
-                
+
+
 #         print()
 
 del tmp_df, leaked_df_gb

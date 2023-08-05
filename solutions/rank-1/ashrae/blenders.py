@@ -35,8 +35,8 @@ class GeneralizedMeanBlender():
     def _objective(self, trial, X, y):
                     
         # create hyperparameters
-        p = trial.suggest_uniform(f"p", *self.p_range)
-        c = trial.suggest_uniform(f"c", 0.95, 1.05)
+        p = trial.suggest_uniform("p", *self.p_range)
+        c = trial.suggest_uniform("c", 0.95, 1.05)
         weights = [
             trial.suggest_uniform(f"w{i}", 0, 1)
             for i in range(X.shape[1])
@@ -54,7 +54,7 @@ class GeneralizedMeanBlender():
                 blend_preds += w*X[:,j]**p
                 total_weight += w
             blend_preds = c*(blend_preds/total_weight)**(1/p)
-            
+
         # calculate mean squared error
         return np.sqrt(mean_squared_error(y, blend_preds))
 

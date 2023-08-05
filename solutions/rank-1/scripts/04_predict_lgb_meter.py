@@ -1,6 +1,6 @@
 import argparse
 import glob
-import numpy as np 
+import numpy as np
 import pandas as pd
 import lightgbm as lgb
 from ashrae.utils import (
@@ -16,24 +16,24 @@ parser.add_argument("--normalize_target", action="store_true",
 FEATURES = [
     # building meta features
     "square_feet", "year_built", "floor_count",
-    
+
     # cat cols
     "building_id", "site_id", "primary_use", 
     "hour", "weekday", "weekday_hour",
     "building_weekday_hour", "building_weekday",
     "building_hour", 
-    
+
     # raw weather features
     "air_temperature", "cloud_coverage", "dew_temperature",
     "precip_depth_1_hr", "sea_level_pressure", "wind_direction", "wind_speed",
-    
+
     # derivative weather features
     "air_temperature_mean_lag7", "air_temperature_std_lag7",
     "air_temperature_mean_lag73", "air_temperature_std_lag73",
-     
+
     # time features
     "weekday_x", "weekday_y", "is_holiday",
-    
+
     # target encoding features
     "gte_meter_building_id_hour", "gte_meter_building_id_weekday",
 ]
@@ -48,19 +48,19 @@ CAT_COLS = [
 DROP_COLS = [
     # time columns
     "year", "timestamp", "hour_x", "hour_y", 
-    
+
     # weather extremum
     "air_temperature_min_lag7", "air_temperature_max_lag7",
     "air_temperature_min_lag73", "air_temperature_max_lag73",    
-    
+
     # first-order gte
     "gte_hour", "gte_weekday", "gte_month", "gte_building_id",
     "gte_meter", "gte_meter_hour", "gte_primary_use", "gte_site_id", 
-    
+
     # second-order gte
     "gte_meter_weekday", "gte_meter_month", "gte_meter_building_id",
     "gte_meter_primary_use", "gte_meter_site_id",  
-    
+
     # month columns
     "month_x", "month_y", "building_month", #"month", 
     "gte_meter_building_id_month"
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     python scripts/04_predict_lgb_meter.py --normalize_target
     python scripts/04_predict_lgb_meter.py    
     """
-        
+
     args = parser.parse_args()
 
     with timer("Loading data"):
@@ -110,8 +110,8 @@ if __name__ == "__main__":
 
             # predict 
             msg = f'Predicting for meter {m} - models# {len(model_list)}, test# {len(X)}'
-            with timer(msg):            
-                assert len(model_list) != 0, "No models to load"
+            with timer(msg):
+                assert model_list, "No models to load"
                 if len(model_list) == 1:
                     preds = model_list[0].predict(X)
                 else:
